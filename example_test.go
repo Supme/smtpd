@@ -5,7 +5,7 @@ import (
 	"net/smtp"
 	"strings"
 
-	"github.com/chrj/smtpd"
+	"github.com/Supme/smtpd"
 )
 
 func ExampleServer() {

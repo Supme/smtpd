@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/smtp"
 
-	"github.com/chrj/smtpd"
+	"github.com/Supme/smtpd"
 	"github.com/eaigner/dkim"
 )
 
