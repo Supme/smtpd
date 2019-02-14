@@ -1,3 +1,3 @@
-module github.com/chrj/smtpd
+module github.com/Supme/smtpd
 
 require github.com/eaigner/dkim v0.0.0-20150301120808-6fe4a7ee9cfb
