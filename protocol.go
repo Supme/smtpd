@@ -95,6 +95,10 @@ func (session *session) handle(line string) {
 		return
 
 	case "DATA":
+		if session.server.DataWriter != nil {
+			session.handleWriteDATA(cmd)
+			return
+		}
 		session.handleDATA(cmd)
 		return
 
@@ -359,7 +363,6 @@ func (session *session) handleDATA(cmd command) {
 		session.reset()
 
 	}
-
 	if err != nil {
 		// Network error, ignore
 		return
@@ -367,7 +370,65 @@ func (session *session) handleDATA(cmd command) {
 
 	// Discard the rest and report an error.
 	_, err = io.Copy(ioutil.Discard, reader)
+	if err != nil {
+		// Network error, ignore
+		return
+	}
 
+	session.reply(552, fmt.Sprintf(
+		"Message exceeded max message size of %d bytes",
+		session.server.MaxMessageSize,
+	))
+
+	session.reset()
+
+	return
+
+}
+
+func (session *session) handleWriteDATA(cmd command) {
+
+	if session.envelope == nil || len(session.envelope.Recipients) == 0 {
+		session.reply(502, "Missing RCPT TO command.")
+		return
+	}
+
+	session.reply(354, "Go ahead. End your data with <CR><LF>.<CR><LF>")
+	session.conn.SetDeadline(time.Now().Add(session.server.DataTimeout))
+
+	uid, dataWriter, err := session.server.DataWriter(session.peer)
+	if err != nil {
+		session.reply(431, "Not enough space on the disk, or an 'out of memory' condition due to a file overload.")
+		return
+	}
+
+	reader := textproto.NewReader(session.reader).DotReader()
+
+	_, err = io.CopyN(dataWriter, reader, int64(session.server.MaxMessageSize))
+
+	if err == io.EOF {
+
+		// EOF was reached before MaxMessageSize
+		// Accept and deliver message
+
+		session.envelope.Data = uid
+
+		if err := session.deliver(); err != nil {
+			session.error(err)
+		} else {
+			session.reply(250, "Thank you. Message ID:"+string(uid))
+		}
+
+		session.reset()
+
+	}
+	if err != nil {
+		// Network error, ignore
+		return
+	}
+
+	// Discard the rest and report an error.
+	_, err = io.Copy(ioutil.Discard, reader)
 	if err != nil {
 		// Network error, ignore
 		return
