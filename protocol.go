@@ -401,6 +401,7 @@ func (session *session) handleWriteDATA(cmd command) {
 		session.reply(431, "Not enough space on the disk, or an 'out of memory' condition due to a file overload.")
 		return
 	}
+	defer dataWriter.Close()
 
 	reader := textproto.NewReader(session.reader).DotReader()
 

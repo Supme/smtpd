@@ -30,7 +30,7 @@ type Server struct {
 	// If an error is returned, it will be reported in the SMTP session.
 	Handler func(peer Peer, env Envelope) error
 
-	DataWriter func(peer Peer) ([]byte, io.Writer, error)
+	DataWriter func(peer Peer) ([]byte, io.WriteCloser, error)
 
 	// Enable various checks during the SMTP session.
 	// Can be left empty for no restrictions.
